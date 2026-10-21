@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useEditor, EditorContent, type JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
 import type { Editor } from '@tiptap/core';
 import { getNotebook, saveNotebook } from '../db/repository.ts';
 import { blocksToTipTap, tipTapToBlocks } from '../db/serializer.ts';
 import { LinkCardExtension } from '../extensions/LinkCard.tsx';
 import { CaptureBar } from './CaptureBar.tsx';
+import { openUrl } from '../browser/tabs.ts';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -128,20 +130,19 @@ const styles = {
 
 interface HeadingEntry { level: 1 | 2 | 3; text: string }
 
-const styles_captureBtn = {
-  background: INDIGO,
-  color: '#fff',
-  border: 'none',
+const styles_captureBtn = (active: boolean) => ({
+  background: active ? '#C7D2FE' : INDIGO_LIGHT,
+  color: INDIGO,
+  border: `1px solid ${active ? INDIGO : 'transparent'}`,
   borderRadius: '5px',
-  padding: '0.2rem 0.6rem',
-  fontSize: '0.75rem',
-  fontWeight: 600,
+  padding: '0.2rem 0.5rem',
+  fontSize: '0.875rem',
+  lineHeight: 1.4,
   cursor: 'pointer',
   fontFamily: 'inherit',
-  lineHeight: 1.4,
   marginLeft: 'auto',
   flexShrink: 0,
-};
+});
 
 interface ToolbarProps {
   editor: Editor | null;
@@ -199,13 +200,13 @@ function Toolbar({ editor, showOutline, headingsCount, capturing, onToggleOutlin
       )}
       <button
         type="button"
-        style={styles_captureBtn}
+        style={styles_captureBtn(capturing)}
         onClick={onToggleCapture}
         aria-label={capturing ? 'Cancel save tab' : 'Save current tab'}
         title={capturing ? 'Cancel' : 'Save current tab'}
         aria-pressed={capturing}
       >
-        {capturing ? '✕ Cancel' : '↓ Save tab'}
+        {capturing ? '✕' : '🔗'}
       </button>
     </div>
   );
@@ -325,6 +326,12 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       LinkCardExtension,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: { class: 'notebook-link', rel: 'noopener noreferrer' },
+      }),
     ],
     editorProps: {
       attributes: { class: 'notebook-editor', 'data-testid': 'notebook-editor' },
@@ -380,6 +387,19 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
   }, [doSave]);
 
   const editorDom = editor?.view?.dom instanceof HTMLElement ? editor.view.dom : null;
+
+  useEffect(() => {
+    if (!editorDom) return;
+    const handler = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest('a[href]') as HTMLAnchorElement | null;
+      if (anchor?.href) {
+        e.preventDefault();
+        openUrl(anchor.href);
+      }
+    };
+    editorDom.addEventListener('click', handler);
+    return () => editorDom.removeEventListener('click', handler);
+  }, [editorDom]);
 
   return (
     <div style={styles.wrapper}>
