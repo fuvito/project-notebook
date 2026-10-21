@@ -1,5 +1,6 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
+import { openUrl } from '../browser/tabs.ts';
 
 const INDIGO = '#4F46E5';
 const BORDER = '#E5E7EB';
@@ -43,12 +44,15 @@ function LinkCardView({ node, deleteNode, selected }: NodeViewProps) {
         }}
       >
         <div style={{ flex: 1, minWidth: 0 }}>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
             style={{
               display: 'block',
+              width: '100%',
+              textAlign: 'left',
+              background: 'none',
+              border: 'none',
+              padding: 0,
               fontWeight: 600,
               fontSize: '0.875rem',
               color: TEXT,
@@ -56,11 +60,14 @@ function LinkCardView({ node, deleteNode, selected }: NodeViewProps) {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); openUrl(url); }}
+            title={url}
           >
             {title}
-          </a>
+          </button>
           <span
             style={{
               display: 'block',

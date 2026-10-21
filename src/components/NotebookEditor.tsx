@@ -265,6 +265,16 @@ export interface NotebookEditorProps {
   notebookId: string;
 }
 
+const SCROLL_KEY = (id: string) => `pn_scroll_${id}`;
+
+function saveScrollPos(notebookId: string, top: number): void {
+  try { localStorage.setItem(SCROLL_KEY(notebookId), String(Math.round(top))); } catch { /* ignore */ }
+}
+
+function loadScrollPos(notebookId: string): number {
+  try { return Number(localStorage.getItem(SCROLL_KEY(notebookId)) ?? '0'); } catch { return 0; }
+}
+
 export function NotebookEditor({ notebookId }: NotebookEditorProps) {
   const [contentReady, setContentReady] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
@@ -272,6 +282,8 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
   const [headings, setHeadings] = useState<HeadingEntry[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDocRef = useRef<JSONContent | null>(null);
   const isLoadingRef = useRef(true);
@@ -336,8 +348,8 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
           const content = nb ? blocksToTipTap(nb.content.blocks) : { type: 'doc', content: [{ type: 'paragraph' }] };
           editor.commands.setContent(content);
           setHeadings(extractHeadings(content));
-          setContentReady(true);
           isLoadingRef.current = false;
+          setContentReady(true);
         }
       })
       .catch(() => {
@@ -348,6 +360,13 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
       });
   }, [editor, notebookId]);
 
+  // Restore scroll position after content loads
+  useEffect(() => {
+    if (!contentReady || !scrollRef.current) return;
+    const saved = loadScrollPos(notebookId);
+    if (saved > 0) scrollRef.current.scrollTop = saved;
+  }, [contentReady, notebookId]);
+
   // Flush pending save on unmount
   useEffect(() => {
     return () => {
@@ -356,6 +375,7 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
         saveTimerRef.current = null;
         if (latestDocRef.current) void doSave(latestDocRef.current);
       }
+      if (scrollTimerRef.current !== null) clearTimeout(scrollTimerRef.current);
     };
   }, [doSave]);
 
@@ -383,7 +403,16 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
           </div>
         )}
 
-        <div style={styles.editorScroll}>
+        <div
+          ref={scrollRef}
+          style={styles.editorScroll}
+          onScroll={() => {
+            if (scrollTimerRef.current !== null) clearTimeout(scrollTimerRef.current);
+            scrollTimerRef.current = setTimeout(() => {
+              if (scrollRef.current) saveScrollPos(notebookId, scrollRef.current.scrollTop);
+            }, 300);
+          }}
+        >
           <EditorContent editor={editor} />
         </div>
 

@@ -5,6 +5,14 @@ export interface TabInfo {
   title: string;
 }
 
+// Opens a URL as a background tab so the popup keeps focus and stays open.
+// Falls back to window.open in non-extension contexts (e.g. vite serve).
+export function openUrl(url: string): void {
+  browser.tabs.create({ url, active: false }).catch(() => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  });
+}
+
 // Returns the active tab's URL and title, or null if the tab is a
 // restricted page (chrome://, about:, etc.) or has no URL/title.
 export async function getActiveTab(): Promise<TabInfo | null> {
