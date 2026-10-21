@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { NotebookList } from '../../components/NotebookList.tsx';
 import { NotebookEditor } from '../../components/NotebookEditor.tsx';
+import { SearchPanel } from '../../components/SearchPanel.tsx';
 import { useNotebooks } from '../../hooks/useNotebooks.ts';
 import {
   isFullscreenMode,
@@ -35,10 +36,6 @@ const styles = {
     gap: '0.5rem',
   },
   windowBtn: {
-    position: 'absolute' as const,
-    top: '4px',
-    right: '5px',
-    zIndex: 100,
     background: 'none',
     border: `1px solid ${BORDER}`,
     borderRadius: '4px',
@@ -48,13 +45,14 @@ const styles = {
     lineHeight: 1,
     color: TEXT_MUTED,
     fontFamily: 'inherit',
-    opacity: 0.7,
   },
 };
 
 export default function App() {
   const { notebooks, selectedId, loading, select, create, rename, remove } = useNotebooks();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchActive, setSearchActive] = useState(false);
+  const [pendingScroll, setPendingScroll] = useState<string | undefined>();
 
   const handleWindowToggle = () => {
     if (fullscreen) {
@@ -64,19 +62,38 @@ export default function App() {
     }
   };
 
+  const handleSelectResult = useCallback(
+    (notebookId: string, scrollToText?: string) => {
+      select(notebookId);
+      setPendingScroll(scrollToText);
+      setSearchActive(false);
+    },
+    [select],
+  );
+
+  const handleScrolled = useCallback(() => setPendingScroll(undefined), []);
+
   return (
     <div style={styles.root(fullscreen)}>
-      <NotebookList
-        notebooks={notebooks}
-        selectedId={selectedId}
-        loading={loading}
-        onSelect={select}
-        onCreate={create}
-        onRename={rename}
-        onDelete={remove}
-        collapsed={!sidebarOpen}
-        onToggleCollapse={() => setSidebarOpen((v) => !v)}
-      />
+      {searchActive ? (
+        <SearchPanel
+          onClose={() => setSearchActive(false)}
+          onSelectResult={handleSelectResult}
+        />
+      ) : (
+        <NotebookList
+          notebooks={notebooks}
+          selectedId={selectedId}
+          loading={loading}
+          onSelect={select}
+          onCreate={create}
+          onRename={rename}
+          onDelete={remove}
+          collapsed={!sidebarOpen}
+          onToggleCollapse={() => setSidebarOpen((v) => !v)}
+          onSearch={() => setSearchActive(true)}
+        />
+      )}
 
       {selectedId ? (
         <NotebookEditor
@@ -84,13 +101,15 @@ export default function App() {
           notebookId={selectedId}
           fullscreen={fullscreen}
           onToggleWindow={handleWindowToggle}
+          scrollToText={pendingScroll}
+          onScrolled={handleScrolled}
         />
       ) : (
         <div style={styles.placeholder}>
           {loading ? 'Loading…' : 'Select a notebook or create one to get started.'}
           <button
             type="button"
-            style={{ ...styles.windowBtn, position: 'static', marginTop: '0.75rem', opacity: 1 }}
+            style={styles.windowBtn}
             onClick={handleWindowToggle}
             title={fullscreen ? 'Restore to popup' : 'Open full screen'}
             aria-label={fullscreen ? 'Restore to popup' : 'Open full screen'}

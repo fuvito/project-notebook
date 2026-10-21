@@ -283,6 +283,8 @@ export interface NotebookEditorProps {
   notebookId: string;
   fullscreen?: boolean;
   onToggleWindow?(): void;
+  scrollToText?: string;
+  onScrolled?(): void;
 }
 
 const SCROLL_KEY = (id: string) => `pn_scroll_${id}`;
@@ -295,7 +297,7 @@ function loadScrollPos(notebookId: string): number {
   try { return Number(localStorage.getItem(SCROLL_KEY(notebookId)) ?? '0'); } catch { return 0; }
 }
 
-export function NotebookEditor({ notebookId, fullscreen, onToggleWindow }: NotebookEditorProps) {
+export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollToText, onScrolled }: NotebookEditorProps) {
   const [contentReady, setContentReady] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -386,12 +388,30 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow }: Noteb
       });
   }, [editor, notebookId]);
 
+  const editorDom = editor?.view?.dom instanceof HTMLElement ? editor.view.dom : null;
+
   // Restore scroll position after content loads
   useEffect(() => {
     if (!contentReady || !scrollRef.current) return;
     const saved = loadScrollPos(notebookId);
     if (saved > 0) scrollRef.current.scrollTop = saved;
   }, [contentReady, notebookId]);
+
+  // Scroll to search match after content loads
+  useEffect(() => {
+    if (!contentReady || !scrollToText || !editorDom) return;
+    const q = scrollToText.toLowerCase();
+    const walker = document.createTreeWalker(editorDom, NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      if (node.textContent?.toLowerCase().includes(q)) {
+        (node.parentElement ?? editorDom).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        break;
+      }
+      node = walker.nextNode();
+    }
+    onScrolled?.();
+  }, [contentReady, scrollToText, editorDom, onScrolled]);
 
   // Flush pending save on unmount
   useEffect(() => {
@@ -404,8 +424,6 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow }: Noteb
       if (scrollTimerRef.current !== null) clearTimeout(scrollTimerRef.current);
     };
   }, [doSave]);
-
-  const editorDom = editor?.view?.dom instanceof HTMLElement ? editor.view.dom : null;
 
   useEffect(() => {
     if (!editorDom) return;

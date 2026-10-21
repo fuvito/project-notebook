@@ -359,6 +359,7 @@ export interface NotebookListProps {
   onDelete(id: string): Promise<void>;
   collapsed?: boolean;
   onToggleCollapse?(): void;
+  onSearch?(): void;
 }
 
 export function NotebookList({
@@ -371,6 +372,7 @@ export function NotebookList({
   onDelete,
   collapsed = false,
   onToggleCollapse,
+  onSearch,
 }: NotebookListProps) {
   const [creating, setCreating] = useState(false);
   const [createValue, setCreateValue] = useState('');
@@ -415,6 +417,17 @@ export function NotebookList({
       <div style={styles.header}>
         <span style={styles.headerLabel}>Notebooks</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          {onSearch && (
+            <button
+              type="button"
+              style={styles.collapseBtn}
+              onClick={onSearch}
+              aria-label="Search notebooks"
+              title="Search"
+            >
+              🔍
+            </button>
+          )}
           <button
             type="button"
             style={styles.collapseBtn}
