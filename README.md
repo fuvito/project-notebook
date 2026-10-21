@@ -117,13 +117,19 @@ npm run typecheck    # TypeScript type check
 npm run lint         # Biome lint
 npm test             # Vitest unit tests (run once)
 npm run test:watch   # Vitest in watch mode
+npm run test:e2e     # Playwright end-to-end tests — builds the extension first, then runs 29 tests in a real Chromium instance
+npm run test:e2e:ui  # Same, with the Playwright UI for step-by-step inspection
 ```
 
-Run all three before opening a pull request:
+Run the first three before opening a pull request:
 
 ```bash
 npm run typecheck && npm run lint && npm test
 ```
+
+### Pre-release checklist
+
+Before tagging a release, work through **[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md)**. It covers flows that require a real Chrome install and cannot be automated: tab capture, inline link clicking, fullscreen window behaviour, popup sizing, and cross-browser verification.
 
 ---
 
@@ -138,6 +144,8 @@ npm run typecheck && npm run lint && npm test
 | `npm run typecheck` | TypeScript type check (no emit) |
 | `npm test` | Vitest unit tests (single run) |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run test:e2e` | Playwright e2e tests — builds first, then runs 29 tests in a real Chromium instance |
+| `npm run test:e2e:ui` | Playwright e2e with interactive UI |
 | `npm run lint` | Biome lint check |
 | `npm run icons` | Regenerate `public/icon16/48/128.png` from `scripts/generate-icons.mjs` |
 
@@ -178,11 +186,19 @@ project-notebook/
       backup.ts           versioned JSON export / validated import
     components/           React UI components
     hooks/                custom React hooks (autosave, notebook state)
+  e2e/
+    fixtures.ts           Playwright fixtures (extension load, extension ID via CDP)
+    helpers.ts            shared test helpers (createNotebook, openNotebook, …)
+    notebook.spec.ts      notebook CRUD tests
+    editor.spec.ts        editor formatting tests
+    search.spec.ts        search and cursor navigation tests
+    persistence.spec.ts   IndexedDB persistence across sessions
   docs/
     BRD.md                business requirements
     CLAUDE.md             AI coding guide for this project
     TECH_DESIGN.md        technical design document
     TASKLIST.md           phased task list
+    RELEASE_CHECKLIST.md  manual QA checklist for pre-release verification
   wxt.config.ts           WXT + manifest config
   vitest.config.ts        Vitest config (jsdom environment)
   tsconfig.json           TypeScript config
