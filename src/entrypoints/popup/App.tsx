@@ -27,10 +27,12 @@ const styles = {
   placeholder: {
     flex: 1,
     display: 'flex',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
     color: '#9CA3AF',
     fontSize: '0.8125rem',
+    gap: '0.5rem',
   },
   windowBtn: {
     position: 'absolute' as const,
@@ -77,22 +79,26 @@ export default function App() {
       />
 
       {selectedId ? (
-        <NotebookEditor key={selectedId} notebookId={selectedId} />
+        <NotebookEditor
+          key={selectedId}
+          notebookId={selectedId}
+          fullscreen={fullscreen}
+          onToggleWindow={handleWindowToggle}
+        />
       ) : (
         <div style={styles.placeholder}>
           {loading ? 'Loading…' : 'Select a notebook or create one to get started.'}
+          <button
+            type="button"
+            style={{ ...styles.windowBtn, position: 'static', marginTop: '0.75rem', opacity: 1 }}
+            onClick={handleWindowToggle}
+            title={fullscreen ? 'Restore to popup' : 'Open full screen'}
+            aria-label={fullscreen ? 'Restore to popup' : 'Open full screen'}
+          >
+            {fullscreen ? '⤡ Restore' : '⤢ Full screen'}
+          </button>
         </div>
       )}
-
-      <button
-        type="button"
-        style={styles.windowBtn}
-        onClick={handleWindowToggle}
-        title={fullscreen ? 'Restore to popup' : 'Open full screen'}
-        aria-label={fullscreen ? 'Restore to popup' : 'Open full screen'}
-      >
-        {fullscreen ? '⤡' : '⤢'}
-      </button>
     </div>
   );
 }

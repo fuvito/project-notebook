@@ -140,7 +140,6 @@ const styles_captureBtn = (active: boolean) => ({
   lineHeight: 1.4,
   cursor: 'pointer',
   fontFamily: 'inherit',
-  marginLeft: 'auto',
   flexShrink: 0,
 });
 
@@ -149,11 +148,13 @@ interface ToolbarProps {
   showOutline: boolean;
   headingsCount: number;
   capturing: boolean;
+  fullscreen?: boolean;
   onToggleOutline(): void;
   onToggleCapture(): void;
+  onToggleWindow?(): void;
 }
 
-function Toolbar({ editor, showOutline, headingsCount, capturing, onToggleOutline, onToggleCapture }: ToolbarProps) {
+function Toolbar({ editor, showOutline, headingsCount, capturing, fullscreen, onToggleOutline, onToggleCapture, onToggleWindow }: ToolbarProps) {
   const btn = (
     label: string,
     active: boolean,
@@ -198,16 +199,32 @@ function Toolbar({ editor, showOutline, headingsCount, capturing, onToggleOutlin
             onToggleOutline, showOutline ? 'Hide outline' : 'Show outline')}
         </>
       )}
-      <button
-        type="button"
-        style={styles_captureBtn(capturing)}
-        onClick={onToggleCapture}
-        aria-label={capturing ? 'Cancel save tab' : 'Save current tab'}
-        title={capturing ? 'Cancel' : 'Save current tab'}
-        aria-pressed={capturing}
-      >
-        {capturing ? '✕' : '🔗'}
-      </button>
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: '2px', flexShrink: 0, alignItems: 'center' }}>
+        <button
+          type="button"
+          style={styles_captureBtn(capturing)}
+          onClick={onToggleCapture}
+          aria-label={capturing ? 'Cancel save tab' : 'Save current tab'}
+          title={capturing ? 'Cancel' : 'Save current tab'}
+          aria-pressed={capturing}
+        >
+          {capturing ? '✕' : '🔗'}
+        </button>
+        {onToggleWindow && (
+          <>
+            <div style={styles.toolbarDivider} />
+            <button
+              type="button"
+              style={styles.toolbarBtn(false)}
+              onClick={onToggleWindow}
+              title={fullscreen ? 'Restore popup' : 'Open full screen'}
+              aria-label={fullscreen ? 'Restore popup' : 'Open full screen'}
+            >
+              {fullscreen ? '⤡' : '⤢'}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -264,6 +281,8 @@ function extractHeadings(doc: JSONContent): HeadingEntry[] {
 
 export interface NotebookEditorProps {
   notebookId: string;
+  fullscreen?: boolean;
+  onToggleWindow?(): void;
 }
 
 const SCROLL_KEY = (id: string) => `pn_scroll_${id}`;
@@ -276,7 +295,7 @@ function loadScrollPos(notebookId: string): number {
   try { return Number(localStorage.getItem(SCROLL_KEY(notebookId)) ?? '0'); } catch { return 0; }
 }
 
-export function NotebookEditor({ notebookId }: NotebookEditorProps) {
+export function NotebookEditor({ notebookId, fullscreen, onToggleWindow }: NotebookEditorProps) {
   const [contentReady, setContentReady] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -408,8 +427,10 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
         showOutline={showOutline}
         headingsCount={headings.length}
         capturing={capturing}
+        fullscreen={fullscreen}
         onToggleOutline={() => setShowOutline((v) => !v)}
         onToggleCapture={() => setCapturing((v) => !v)}
+        onToggleWindow={onToggleWindow}
       />
 
       {capturing && (
