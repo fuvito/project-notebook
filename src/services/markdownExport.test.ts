@@ -144,7 +144,7 @@ describe('blocksToMarkdown', () => {
       lnk('Ref', 'https://ref.example.com', 'Important reference'),
     ];
     const md = blocksToMarkdown('Project Alpha', blocks);
-    const expected = [
+    const expected = `${[
       '# Project Alpha',
       '',
       '# Overview',
@@ -156,7 +156,7 @@ describe('blocksToMarkdown', () => {
       '',
       '[Ref](https://ref.example.com)',
       '> Important reference',
-    ].join('\n') + '\n';
+    ].join('\n')}\n`;
     expect(md).toBe(expected);
   });
 });

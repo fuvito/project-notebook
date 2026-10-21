@@ -8,6 +8,7 @@ import { NotebookEditor, type NotebookScrollTarget } from '../../components/Note
 import { NotebookList } from '../../components/NotebookList.tsx';
 import { SearchPanel } from '../../components/SearchPanel.tsx';
 import { useNotebooks } from '../../hooks/useNotebooks.ts';
+import { downloadExport } from '../../services/backup.ts';
 
 const fullscreen = isFullscreenMode();
 
@@ -49,7 +50,11 @@ const styles = {
 };
 
 export default function App() {
-  const { notebooks, selectedId, loading, select, create, rename, remove } = useNotebooks();
+  const { notebooks, selectedId, loading, select, create, rename, remove, restore } = useNotebooks();
+
+  const handleExport = useCallback(() => {
+    downloadExport(notebooks);
+  }, [notebooks]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchActive, setSearchActive] = useState(false);
   const [pendingScroll, setPendingScroll] = useState<NotebookScrollTarget | undefined>();
@@ -93,6 +98,8 @@ export default function App() {
           collapsed={!sidebarOpen}
           onToggleCollapse={() => setSidebarOpen((v) => !v)}
           onSearch={() => setSearchActive(true)}
+          onExport={handleExport}
+          onRestore={restore}
         />
       )}
 

@@ -18,6 +18,7 @@ export interface UseNotebooksResult {
   create(title: string): Promise<void>;
   rename(id: string, newTitle: string): Promise<void>;
   remove(id: string): Promise<void>;
+  restore(imported: Notebook[]): Promise<void>;
 }
 
 export function useNotebooks(): UseNotebooksResult {
@@ -85,5 +86,17 @@ export function useNotebooks(): UseNotebooksResult {
     }
   }, [reload, selectedId]);
 
-  return { notebooks, selectedId, loading, select, create, rename, remove };
+  const restore = useCallback(async (imported: Notebook[]): Promise<void> => {
+    for (const nb of imported) {
+      await saveNotebook(nb);
+    }
+    await reload();
+    const firstId = imported[0]?.id;
+    if (firstId) {
+      setSelectedId(firstId);
+      void setLastUsedNotebookId(firstId).catch(() => {});
+    }
+  }, [reload]);
+
+  return { notebooks, selectedId, loading, select, create, rename, remove, restore };
 }

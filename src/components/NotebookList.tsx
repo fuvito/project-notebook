@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
+import { readImportFile } from '../services/backup.ts';
 import type { Notebook } from '../types/schema.ts';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -208,6 +209,57 @@ const styles = {
   hoverHighlight: {
     background: '#F3F4F6',
   },
+  footer: {
+    flexShrink: 0,
+    borderTop: `1px solid ${BORDER}`,
+    padding: '0.375rem 0.5rem',
+    display: 'flex',
+    gap: '0.375rem',
+  },
+  footerBtn: {
+    flex: 1,
+    background: 'none',
+    border: `1px solid ${BORDER}`,
+    borderRadius: '4px',
+    padding: '0.25rem 0',
+    fontSize: '0.6875rem',
+    color: TEXT_MUTED,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textAlign: 'center' as const,
+  },
+  importBanner: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '0.25rem',
+    width: '100%',
+  },
+  importBannerText: {
+    fontSize: '0.6875rem',
+    color: TEXT,
+    fontWeight: 500,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  },
+  importErrorText: {
+    fontSize: '0.6875rem',
+    color: DANGER,
+    padding: '0.25rem 0',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  },
+  confirmImportBtn: {
+    background: INDIGO,
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    padding: '0.2rem 0.5rem',
+    fontSize: '0.75rem',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  },
 };
 
 // ── NotebookItem ──────────────────────────────────────────────────────────────
@@ -349,6 +401,12 @@ function NotebookItem({ notebook, selected, onSelect, onRename, onDelete }: Note
 
 // ── NotebookList ──────────────────────────────────────────────────────────────
 
+type ImportPhase =
+  | { phase: 'idle' }
+  | { phase: 'confirming'; notebooks: Notebook[]; newCount: number; replaceCount: number }
+  | { phase: 'busy' }
+  | { phase: 'error'; message: string };
+
 export interface NotebookListProps {
   notebooks: Notebook[];
   selectedId: string | null;
@@ -360,6 +418,8 @@ export interface NotebookListProps {
   collapsed?: boolean;
   onToggleCollapse?(): void;
   onSearch?(): void;
+  onExport?(): void;
+  onRestore?(imported: Notebook[]): Promise<void>;
 }
 
 export function NotebookList({
@@ -373,10 +433,43 @@ export function NotebookList({
   collapsed = false,
   onToggleCollapse,
   onSearch,
+  onExport,
+  onRestore,
 }: NotebookListProps) {
   const [creating, setCreating] = useState(false);
   const [createValue, setCreateValue] = useState('');
   const createRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importPhase, setImportPhase] = useState<ImportPhase>({ phase: 'idle' });
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    const result = await readImportFile(file);
+    if (!result.ok) {
+      setImportPhase({ phase: 'error', message: result.error });
+      setTimeout(() => setImportPhase({ phase: 'idle' }), 4000);
+      return;
+    }
+    const existingIds = new Set(notebooks.map((nb) => nb.id));
+    const newCount = result.data.notebooks.filter((nb) => !existingIds.has(nb.id)).length;
+    const replaceCount = result.data.notebooks.length - newCount;
+    setImportPhase({ phase: 'confirming', notebooks: result.data.notebooks, newCount, replaceCount });
+  }, [notebooks]);
+
+  const handleConfirmImport = useCallback(async () => {
+    if (importPhase.phase !== 'confirming') return;
+    const toImport = importPhase.notebooks;
+    setImportPhase({ phase: 'busy' });
+    try {
+      await onRestore?.(toImport);
+      setImportPhase({ phase: 'idle' });
+    } catch {
+      setImportPhase({ phase: 'error', message: 'Import failed' });
+      setTimeout(() => setImportPhase({ phase: 'idle' }), 4000);
+    }
+  }, [importPhase, onRestore]);
 
   useEffect(() => {
     if (creating) {
@@ -499,6 +592,73 @@ export function NotebookList({
           ))}
         </ul>
       )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        style={{ display: 'none' }}
+        onChange={(e) => void handleFileChange(e)}
+      />
+
+      <div style={styles.footer}>
+        {importPhase.phase === 'confirming' && (
+          <div style={styles.importBanner}>
+            <span style={styles.importBannerText}>
+              {importPhase.newCount > 0 && importPhase.replaceCount > 0
+                ? `${importPhase.newCount} new, ${importPhase.replaceCount} to update`
+                : importPhase.newCount > 0
+                  ? `${importPhase.newCount} notebook${importPhase.newCount > 1 ? 's' : ''} to import`
+                  : `${importPhase.replaceCount} notebook${importPhase.replaceCount > 1 ? 's' : ''} to update`}
+            </span>
+            <div style={styles.confirmBtns}>
+              <button
+                type="button"
+                style={styles.confirmImportBtn}
+                onClick={() => void handleConfirmImport()}
+              >
+                Import
+              </button>
+              <button
+                type="button"
+                style={styles.confirmCancelBtn}
+                onClick={() => setImportPhase({ phase: 'idle' })}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {importPhase.phase === 'error' && (
+          <span style={styles.importErrorText} title={importPhase.message}>
+            {importPhase.message}
+          </span>
+        )}
+        {(importPhase.phase === 'idle' || importPhase.phase === 'busy') && (
+          <>
+            <button
+              type="button"
+              style={styles.footerBtn}
+              onClick={onExport}
+              disabled={notebooks.length === 0}
+              title="Export all notebooks as JSON backup"
+              aria-label="Export notebooks"
+            >
+              ↓ Export
+            </button>
+            <button
+              type="button"
+              style={styles.footerBtn}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importPhase.phase === 'busy'}
+              title="Import notebooks from JSON backup"
+              aria-label="Import notebooks"
+            >
+              {importPhase.phase === 'busy' ? '…' : '↑ Import'}
+            </button>
+          </>
+        )}
+      </div>
     </nav>
   );
 }

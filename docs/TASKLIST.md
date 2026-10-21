@@ -49,19 +49,19 @@ Use `[ ]` for incomplete tasks and `[x]` for completed tasks.
 
 ## Phase 5 --- Search
 
--   [ ] Search notebook title, headings, paragraphs, bullets, link
+-   [x] Search notebook title, headings, paragraphs, bullets, link
     title, URL, description.
--   [ ] Show useful snippets and notebook name.
--   [ ] Open notebook and focus/scroll to matching block.
--   [ ] Add no-results state and tests.
+-   [x] Show useful snippets and notebook name.
+-   [x] Open notebook and focus/scroll to matching block.
+-   [x] Add no-results state and tests.
 
 ## Phase 6 --- Backup/restore
 
--   [ ] Export notebooks as versioned JSON.
--   [ ] Import with schema/version validation.
--   [ ] Define duplicate/conflict behavior; never silently overwrite.
--   [ ] Validate URL schemes and file size.
--   [ ] Test malformed files and round-trip export/import.
+-   [x] Export notebooks as versioned JSON.
+-   [x] Import with schema/version validation.
+-   [x] Define duplicate/conflict behavior; never silently overwrite.
+-   [x] Validate URL schemes and file size.
+-   [x] Test malformed files and round-trip export/import.
 
 ## Phase 7 --- Release readiness
 
