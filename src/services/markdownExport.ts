@@ -20,7 +20,12 @@ function inlineToMd(nodes: JSONContent[]): string {
 export function blocksToMarkdown(title: string, blocks: NotebookBlock[]): string {
   const lines: string[] = [`# ${title}`, ''];
 
+  let prevWasBullet = false;
+
   for (const block of blocks) {
+    if (prevWasBullet && block.type !== 'bullet') lines.push('');
+    prevWasBullet = block.type === 'bullet';
+
     switch (block.type) {
       case 'heading':
         lines.push(`${'#'.repeat(block.level)} ${block.text}`);
