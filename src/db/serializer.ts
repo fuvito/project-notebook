@@ -7,20 +7,19 @@ export function blocksToTipTap(blocks: NotebookBlock[]): JSONContent {
   const nodes: JSONContent[] = [];
   let bulletBuffer: NotebookBlock[] = [];
 
+  const bulletContent = (b: NotebookBlock): JSONContent[] => {
+    if (b.type !== 'bullet') return [];
+    if (b.inlineContent) return b.inlineContent as JSONContent[];
+    return b.text ? [{ type: 'text', text: b.text }] : [];
+  };
+
   const flushBullets = () => {
     if (bulletBuffer.length === 0) return;
     nodes.push({
       type: 'bulletList',
       content: bulletBuffer.map((b) => ({
         type: 'listItem',
-        content: [
-          {
-            type: 'paragraph',
-            content: (b as { text: string }).text
-              ? [{ type: 'text', text: (b as { text: string }).text }]
-              : [],
-          },
-        ],
+        content: [{ type: 'paragraph', content: bulletContent(b) }],
       })),
     });
     bulletBuffer = [];
@@ -39,7 +38,9 @@ export function blocksToTipTap(blocks: NotebookBlock[]): JSONContent {
       case 'paragraph':
         nodes.push({
           type: 'paragraph',
-          content: block.text ? [{ type: 'text', text: block.text }] : [],
+          content: block.inlineContent
+            ? (block.inlineContent as JSONContent[])
+            : block.text ? [{ type: 'text', text: block.text }] : [],
         });
         break;
       case 'bullet':
@@ -72,6 +73,11 @@ function nodeText(node: JSONContent): string {
   return (node.content ?? []).map(nodeText).join('');
 }
 
+function hasMarks(node: JSONContent): boolean {
+  if (node.type === 'text') return (node.marks?.length ?? 0) > 0;
+  return (node.content ?? []).some(hasMarks);
+}
+
 export function tipTapToBlocks(doc: JSONContent): NotebookBlock[] {
   const blocks: NotebookBlock[] = [];
 
@@ -86,13 +92,24 @@ export function tipTapToBlocks(doc: JSONContent): NotebookBlock[] {
       }
       case 'paragraph': {
         const text = nodeText(node).slice(0, 50_000);
-        if (text) blocks.push({ id: crypto.randomUUID(), type: 'paragraph', text });
+        if (text) blocks.push({
+          id: crypto.randomUUID(),
+          type: 'paragraph',
+          text,
+          ...(hasMarks(node) ? { inlineContent: node.content } : {}),
+        });
         break;
       }
       case 'bulletList':
         for (const item of node.content ?? []) {
           const text = nodeText(item).slice(0, 5_000);
-          if (text) blocks.push({ id: crypto.randomUUID(), type: 'bullet', text });
+          const para = item.content?.[0];
+          if (text) blocks.push({
+            id: crypto.randomUUID(),
+            type: 'bullet',
+            text,
+            ...(para && hasMarks(para) ? { inlineContent: para.content } : {}),
+          });
         }
         break;
       case 'linkCard': {

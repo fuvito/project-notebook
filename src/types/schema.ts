@@ -32,12 +32,14 @@ export const ParagraphBlockSchema = z.object({
   id: z.string().min(1),
   type: z.literal('paragraph'),
   text: z.string().max(50_000),
+  inlineContent: z.array(z.any()).optional(),
 });
 
 export const BulletBlockSchema = z.object({
   id: z.string().min(1),
   type: z.literal('bullet'),
   text: z.string().max(5_000),
+  inlineContent: z.array(z.any()).optional(),
 });
 
 export const LinkBlockSchema = z.object({

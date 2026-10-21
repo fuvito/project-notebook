@@ -178,6 +178,48 @@ describe('tipTapToBlocks', () => {
   });
 });
 
+  it('preserves paragraph inlineContent with link mark on round-trip', () => {
+    const inlineContent = [
+      { type: 'text', text: 'See ' },
+      { type: 'text', text: 'https://example.com', marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank' } }] },
+    ];
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: inlineContent }],
+    };
+    const blocks = tipTapToBlocks(doc);
+    expect(blocks[0]).toMatchObject({ type: 'paragraph', text: 'See https://example.com' });
+    expect((blocks[0] as { inlineContent?: unknown }).inlineContent).toEqual(inlineContent);
+
+    const restored = blocksToTipTap(blocks);
+    expect(restored.content?.[0]).toEqual({ type: 'paragraph', content: inlineContent });
+  });
+
+  it('preserves bullet inlineContent with link mark on round-trip', () => {
+    const inlineContent = [
+      { type: 'text', text: 'https://example.com', marks: [{ type: 'link', attrs: { href: 'https://example.com', target: '_blank' } }] },
+    ];
+    const doc = {
+      type: 'doc',
+      content: [{
+        type: 'bulletList',
+        content: [{
+          type: 'listItem',
+          content: [{ type: 'paragraph', content: inlineContent }],
+        }],
+      }],
+    };
+    const blocks = tipTapToBlocks(doc);
+    expect(blocks[0]).toMatchObject({ type: 'bullet', text: 'https://example.com' });
+    expect((blocks[0] as { inlineContent?: unknown }).inlineContent).toEqual(inlineContent);
+
+    const restored = blocksToTipTap(blocks);
+    expect(restored.content?.[0]?.content?.[0]?.content?.[0]).toEqual({
+      type: 'paragraph',
+      content: inlineContent,
+    });
+  });
+
 // ── round-trip ────────────────────────────────────────────────────────────────
 
 describe('round-trip: blocks → TipTap → blocks', () => {
