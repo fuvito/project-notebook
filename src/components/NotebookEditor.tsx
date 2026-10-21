@@ -474,6 +474,23 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
     onScrolled?.();
   }, [contentReady, scrollTarget, editor, onScrolled]);
 
+  // Ctrl+S / Cmd+S — flush debounce and save immediately
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (isLoadingRef.current || !editor) return;
+        if (saveTimerRef.current !== null) {
+          clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = null;
+        }
+        void doSave(latestDocRef.current ?? editor.getJSON());
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [doSave, editor]);
+
   // Flush pending save on unmount
   useEffect(() => {
     return () => {
