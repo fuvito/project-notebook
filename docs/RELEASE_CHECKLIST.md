@@ -77,7 +77,20 @@ Work through them top to bottom before tagging a release.
 
 ---
 
-## 8 — Edge cases and robustness
+## 8 — Markdown export (↓ .md button)
+
+- [ ] Open a notebook with headings, paragraphs, bullets, and a link card
+- [ ] Click **↓ .md** in the toolbar — browser download prompt appears (or file downloads automatically)
+- [ ] Downloaded filename matches the notebook title (e.g. `My Project.md`)
+- [ ] Open the file in a text editor — title is the first H1, headings/bullets/links render correctly
+- [ ] Link card with a description exports as `[title](url)` followed by `> description`
+- [ ] Bold and italic text in paragraphs/bullets is wrapped in `**` / `*`
+- [ ] Notebook title containing special characters (e.g. `API / Keys`) — filename uses `-` instead (`API - Keys.md`)
+- [ ] Click ↓ .md while the editor has unsaved changes — the downloaded file reflects the current (unsaved) content
+
+---
+
+## 9 — Edge cases and robustness (general)
 
 - [ ] Notebook title with emoji (e.g. "🚀 Launch") — renders correctly, search finds it
 - [ ] Very long notebook title (200 chars) — truncates in the sidebar without breaking layout
@@ -87,14 +100,14 @@ Work through them top to bottom before tagging a release.
 
 ---
 
-## 9 — Browser compatibility
+## 10 — Browser compatibility
 
 - [ ] All of the above on **Chrome Stable** (current release)
 - [ ] Open popup on **Microsoft Edge** — basic functionality works (Edge is Chromium-based)
 
 ---
 
-## 10 — Clean install
+## 11 — Clean install
 
 - [ ] Remove the extension, reinstall from unpacked
 - [ ] Confirm all notebooks and content are gone (IndexedDB is cleared with the extension)
