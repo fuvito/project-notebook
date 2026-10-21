@@ -4,47 +4,47 @@ Use `[ ]` for incomplete tasks and `[x]` for completed tasks.
 
 ## Phase 0 --- Setup
 
--   [ ] Confirm product/extension name.
--   [ ] Create repository and README.
--   [ ] Scaffold WXT + React + TypeScript, Manifest V3.
--   [ ] Add format, lint, type-check, test, and build scripts.
+-   [x] Confirm product/extension name.
+-   [x] Create repository and README.
+-   [x] Scaffold WXT + React + TypeScript, Manifest V3.
+-   [x] Add format, lint, type-check, test, and build scripts.
 
 ## Phase 1 --- Model and persistence
 
--   [ ] Define versioned Notebook and NotebookDocument types.
--   [ ] Define heading, paragraph, bullet, and link blocks.
--   [ ] Add schema validation for stored/imported data.
--   [ ] Implement IndexedDB repository and CRUD operations.
--   [ ] Add stable IDs and created/updated timestamps.
--   [ ] Add migration entry point.
--   [ ] Test repository, validation, and migrations.
+-   [x] Define versioned Notebook and NotebookDocument types.
+-   [x] Define heading, paragraph, bullet, and link blocks.
+-   [x] Add schema validation for stored/imported data.
+-   [x] Implement IndexedDB repository and CRUD operations.
+-   [x] Add stable IDs and created/updated timestamps.
+-   [x] Add migration entry point.
+-   [x] Test repository, validation, and migrations.
 
 ## Phase 2 --- Notebook management
 
--   [ ] Build notebook list and create/rename/delete flows.
--   [ ] Add empty states and destructive-action confirmation.
--   [ ] Store last-used notebook preference.
+-   [x] Build notebook list and create/rename/delete flows.
+-   [x] Add empty states and destructive-action confirmation.
+-   [x] Store last-used notebook preference.
 -   [ ] Test persistence after reload and browser restart.
 
 ## Phase 3 --- Editor
 
--   [ ] Integrate TipTap/ProseMirror with minimal extensions.
--   [ ] Support H1--H3, paragraphs, bullets, and links.
--   [ ] Render link title, URL, and optional description.
--   [ ] Derive outline from headings.
--   [ ] Implement debounced autosave and save/error states.
--   [ ] Handle notebook switching without losing dirty changes.
--   [ ] Test serialization and keyboard/accessibility behavior.
+-   [x] Integrate TipTap/ProseMirror with minimal extensions.
+-   [x] Support H1--H3, paragraphs, bullets, and links.
+-   [x] Render link title, URL, and optional description.
+-   [x] Derive outline from headings.
+-   [x] Implement debounced autosave and save/error states.
+-   [x] Handle notebook switching without losing dirty changes.
+-   [x] Test serialization and keyboard/accessibility behavior.
 
 ## Phase 4 --- Capture
 
--   [ ] Implement user-triggered active-tab capture.
--   [ ] Read active tab title and URL with minimum permissions.
--   [ ] Build capture UI with notebook selector.
--   [ ] Default to last-used notebook when available.
--   [ ] Allow editing title/URL and adding a description.
--   [ ] Insert link block at a predictable location.
--   [ ] Show success/error feedback; handle unsupported tabs.
+-   [x] Implement user-triggered active-tab capture.
+-   [x] Read active tab title and URL with minimum permissions.
+-   [x] Build capture UI with notebook selector.
+-   [x] Default to last-used notebook when available.
+-   [x] Allow editing title/URL and adding a description.
+-   [x] Insert link block at a predictable location.
+-   [x] Show success/error feedback; handle unsupported tabs.
 -   [ ] Manually test in Chrome.
 
 ## Phase 5 --- Search

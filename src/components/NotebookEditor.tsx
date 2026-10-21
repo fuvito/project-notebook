@@ -5,6 +5,7 @@ import type { Editor } from '@tiptap/core';
 import { getNotebook, saveNotebook } from '../db/repository.ts';
 import { blocksToTipTap, tipTapToBlocks } from '../db/serializer.ts';
 import { LinkCardExtension } from '../extensions/LinkCard.tsx';
+import { CaptureBar } from './CaptureBar.tsx';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -127,14 +128,31 @@ const styles = {
 
 interface HeadingEntry { level: 1 | 2 | 3; text: string }
 
+const styles_captureBtn = {
+  background: INDIGO,
+  color: '#fff',
+  border: 'none',
+  borderRadius: '5px',
+  padding: '0.2rem 0.6rem',
+  fontSize: '0.75rem',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  lineHeight: 1.4,
+  marginLeft: 'auto',
+  flexShrink: 0,
+};
+
 interface ToolbarProps {
   editor: Editor | null;
   showOutline: boolean;
   headingsCount: number;
+  capturing: boolean;
   onToggleOutline(): void;
+  onToggleCapture(): void;
 }
 
-function Toolbar({ editor, showOutline, headingsCount, onToggleOutline }: ToolbarProps) {
+function Toolbar({ editor, showOutline, headingsCount, capturing, onToggleOutline, onToggleCapture }: ToolbarProps) {
   const btn = (
     label: string,
     active: boolean,
@@ -179,6 +197,16 @@ function Toolbar({ editor, showOutline, headingsCount, onToggleOutline }: Toolba
             onToggleOutline, showOutline ? 'Hide outline' : 'Show outline')}
         </>
       )}
+      <button
+        type="button"
+        style={styles_captureBtn}
+        onClick={onToggleCapture}
+        aria-label={capturing ? 'Cancel save tab' : 'Save current tab'}
+        title={capturing ? 'Cancel' : 'Save current tab'}
+        aria-pressed={capturing}
+      >
+        {capturing ? '✕ Cancel' : '↓ Save tab'}
+      </button>
     </div>
   );
 }
@@ -240,6 +268,7 @@ export interface NotebookEditorProps {
 export function NotebookEditor({ notebookId }: NotebookEditorProps) {
   const [contentReady, setContentReady] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const [headings, setHeadings] = useState<HeadingEntry[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
@@ -338,8 +367,14 @@ export function NotebookEditor({ notebookId }: NotebookEditorProps) {
         editor={editor}
         showOutline={showOutline}
         headingsCount={headings.length}
+        capturing={capturing}
         onToggleOutline={() => setShowOutline((v) => !v)}
+        onToggleCapture={() => setCapturing((v) => !v)}
       />
+
+      {capturing && (
+        <CaptureBar editor={editor} onClose={() => setCapturing(false)} />
+      )}
 
       <div style={{ ...styles.contentArea, position: 'relative' }}>
         {!contentReady && (
