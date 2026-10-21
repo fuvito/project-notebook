@@ -63,6 +63,8 @@ const styles = {
     flex: 1,
     overflowY: 'auto' as const,
     padding: '0.75rem 1rem',
+    display: 'flex',
+    flexDirection: 'column' as const,
   },
   outlinePanel: {
     width: '160px',
@@ -437,6 +439,17 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
     editorDom.addEventListener('click', handler);
     return () => editorDom.removeEventListener('click', handler);
   }, [editorDom]);
+
+  // Clicking the scroll container background (padding area) focuses end of doc
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !editor) return;
+    const handler = (e: MouseEvent) => {
+      if (e.target === el) editor.commands.focus('end');
+    };
+    el.addEventListener('click', handler);
+    return () => el.removeEventListener('click', handler);
+  }, [editor]);
 
   return (
     <div style={styles.wrapper}>
