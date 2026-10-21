@@ -309,6 +309,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDocRef = useRef<JSONContent | null>(null);
   const isLoadingRef = useRef(true);
+  const localModifiedRef = useRef(false);
 
   const doSave = useCallback(
     async (doc: JSONContent) => {
@@ -322,6 +323,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
             updatedAt: Date.now(),
           });
         }
+        localModifiedRef.current = false;
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus((s) => (s === 'saved' ? 'idle' : s)), 1500);
       } catch {
@@ -359,6 +361,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
     },
     onUpdate: ({ editor: e }) => {
       if (isLoadingRef.current) return;
+      localModifiedRef.current = true;
       const doc = e.getJSON();
       setHeadings(extractHeadings(doc));
       scheduleAutosave(doc);
@@ -424,6 +427,33 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
       if (scrollTimerRef.current !== null) clearTimeout(scrollTimerRef.current);
     };
   }, [doSave]);
+
+  // Reload content when another window saves the same notebook
+  useEffect(() => {
+    if (!editor) return;
+    let channel: BroadcastChannel;
+    try {
+      channel = new BroadcastChannel('pn_sync');
+    } catch {
+      return;
+    }
+    channel.onmessage = (ev: MessageEvent) => {
+      const data = ev.data as { type?: string; notebookId?: string } | null;
+      if (data?.type !== 'saved' || data?.notebookId !== notebookId) return;
+      if (localModifiedRef.current) return;
+      getNotebook(notebookId)
+        .then((nb) => {
+          if (!nb || editor.isDestroyed || localModifiedRef.current) return;
+          const content = blocksToTipTap(nb.content.blocks);
+          isLoadingRef.current = true;
+          editor.commands.setContent(content);
+          setHeadings(extractHeadings(content));
+          isLoadingRef.current = false;
+        })
+        .catch(() => {});
+    };
+    return () => channel.close();
+  }, [notebookId, editor]);
 
   useEffect(() => {
     if (!editorDom) return;
