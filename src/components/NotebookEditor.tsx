@@ -7,6 +7,7 @@ import { openUrl } from '../browser/tabs.ts';
 import { getNotebook, saveNotebook } from '../db/repository.ts';
 import { blocksToTipTap, tipTapToBlocks } from '../db/serializer.ts';
 import { LinkCardExtension } from '../extensions/LinkCard.tsx';
+import { blocksToMarkdown } from '../services/markdownExport.ts';
 import { CaptureBar } from './CaptureBar.tsx';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -154,9 +155,10 @@ interface ToolbarProps {
   onToggleOutline(): void;
   onToggleCapture(): void;
   onToggleWindow?(): void;
+  onExport(): void;
 }
 
-function Toolbar({ editor, showOutline, headingsCount, capturing, fullscreen, onToggleOutline, onToggleCapture, onToggleWindow }: ToolbarProps) {
+function Toolbar({ editor, showOutline, headingsCount, capturing, fullscreen, onToggleOutline, onToggleCapture, onToggleWindow, onExport }: ToolbarProps) {
   const btn = (
     label: string,
     active: boolean,
@@ -202,6 +204,16 @@ function Toolbar({ editor, showOutline, headingsCount, capturing, fullscreen, on
         </>
       )}
       <div style={{ marginLeft: 'auto', display: 'flex', gap: '2px', flexShrink: 0, alignItems: 'center' }}>
+        <button
+          type="button"
+          style={styles.toolbarBtn(false)}
+          onClick={onExport}
+          title="Export as Markdown"
+          aria-label="Export as Markdown"
+        >
+          ↓ .md
+        </button>
+        <div style={styles.toolbarDivider} />
         <button
           type="button"
           style={styles_captureBtn(capturing)}
@@ -370,6 +382,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
   const [capturing, setCapturing] = useState(false);
   const [headings, setHeadings] = useState<HeadingEntry[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [notebookTitle, setNotebookTitle] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -443,6 +456,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
           const content = nb ? blocksToTipTap(nb.content.blocks) : { type: 'doc', content: [{ type: 'paragraph' }] };
           editor.commands.setContent(content);
           setHeadings(extractHeadings(content));
+          if (nb) setNotebookTitle(nb.title);
           isLoadingRef.current = false;
           setContentReady(true);
         }
@@ -456,6 +470,20 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
   }, [editor, notebookId]);
 
   const editorDom = editor?.view?.dom instanceof HTMLElement ? editor.view.dom : null;
+
+  const handleExport = useCallback(() => {
+    if (!editor) return;
+    const blocks = tipTapToBlocks(editor.getJSON());
+    const markdown = blocksToMarkdown(notebookTitle || 'notebook', blocks);
+    const safeName = (notebookTitle || 'notebook').replace(/[/\\:*?"<>|]/g, '-');
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${safeName}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [editor, notebookTitle]);
 
   // Restore scroll position after content loads
   useEffect(() => {
@@ -538,6 +566,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
         onToggleOutline={() => setShowOutline((v) => !v)}
         onToggleCapture={() => setCapturing((v) => !v)}
         onToggleWindow={onToggleWindow}
+        onExport={handleExport}
       />
 
       {capturing && (
