@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NotebookList } from '../../components/NotebookList.tsx';
 import { NotebookEditor } from '../../components/NotebookEditor.tsx';
 import { useNotebooks } from '../../hooks/useNotebooks.ts';
@@ -24,6 +25,7 @@ const styles = {
 
 export default function App() {
   const { notebooks, selectedId, loading, select, create, rename, remove } = useNotebooks();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div style={styles.root}>
@@ -35,6 +37,8 @@ export default function App() {
         onCreate={create}
         onRename={rename}
         onDelete={remove}
+        collapsed={!sidebarOpen}
+        onToggleCollapse={() => setSidebarOpen((v) => !v)}
       />
 
       {selectedId ? (

@@ -24,6 +24,29 @@ const styles = {
     fontSize: '0.8125rem',
     overflow: 'hidden',
   },
+  collapsedStrip: {
+    width: '28px',
+    minWidth: '28px',
+    height: '100%',
+    background: SURFACE,
+    borderRight: `1px solid ${BORDER}`,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    paddingTop: '0.5rem',
+    gap: '0.5rem',
+    fontFamily: 'Inter Variable, Inter, sans-serif',
+  },
+  collapseBtn: {
+    background: 'none',
+    border: 'none',
+    padding: '0.2rem 0.25rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    lineHeight: 1,
+    color: TEXT_MUTED,
+  },
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -332,6 +355,8 @@ export interface NotebookListProps {
   onCreate(title: string): Promise<void>;
   onRename(id: string, newTitle: string): Promise<void>;
   onDelete(id: string): Promise<void>;
+  collapsed?: boolean;
+  onToggleCollapse?(): void;
 }
 
 export function NotebookList({
@@ -342,6 +367,8 @@ export function NotebookList({
   onCreate,
   onRename,
   onDelete,
+  collapsed = false,
+  onToggleCollapse,
 }: NotebookListProps) {
   const [creating, setCreating] = useState(false);
   const [createValue, setCreateValue] = useState('');
@@ -365,20 +392,47 @@ export function NotebookList({
     else if (e.key === 'Escape') setCreating(false);
   };
 
+  if (collapsed) {
+    return (
+      <div style={styles.collapsedStrip}>
+        <button
+          type="button"
+          style={styles.collapseBtn}
+          onClick={onToggleCollapse}
+          aria-label="Show notebooks"
+          title="Show notebooks"
+        >
+          ›
+        </button>
+      </div>
+    );
+  }
+
   return (
     <nav aria-label="Notebooks" style={styles.nav}>
       <div style={styles.header}>
         <span style={styles.headerLabel}>Notebooks</span>
-        <button
-          type="button"
-          style={styles.addBtn}
-          onClick={() => setCreating(true)}
-          aria-label="New notebook"
-          title="New notebook"
-          disabled={creating}
-        >
-          +
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <button
+            type="button"
+            style={styles.collapseBtn}
+            onClick={onToggleCollapse}
+            aria-label="Hide sidebar"
+            title="Hide sidebar"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            style={styles.addBtn}
+            onClick={() => setCreating(true)}
+            aria-label="New notebook"
+            title="New notebook"
+            disabled={creating}
+          >
+            +
+          </button>
+        </div>
       </div>
 
       {creating && (
