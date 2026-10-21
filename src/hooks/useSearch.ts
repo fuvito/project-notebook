@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getAllNotebooks } from '../db/repository.ts';
 
 export interface SearchResult {
@@ -9,6 +9,7 @@ export interface SearchResult {
   snippet: string;
   matchStart: number;
   matchLength: number;
+  occurrenceIndex: number; // Nth block of this type in the doc that contains the query
 }
 
 function makeSnippet(text: string, idx: number, qLen: number) {
@@ -37,9 +38,12 @@ async function runSearch(query: string): Promise<SearchResult[]> {
         notebookTitle: nb.title,
         blockId: '__title__',
         blockType: 'title',
+        occurrenceIndex: 0,
         ...makeSnippet(nb.title, titleIdx, q.length),
       });
     }
+
+    const typeOcc: Record<string, number> = { heading: 0, paragraph: 0, bullet: 0 };
 
     for (const block of nb.content.blocks) {
       if (block.type === 'heading' || block.type === 'paragraph' || block.type === 'bullet') {
@@ -50,6 +54,7 @@ async function runSearch(query: string): Promise<SearchResult[]> {
             notebookTitle: nb.title,
             blockId: block.id,
             blockType: block.type,
+            occurrenceIndex: typeOcc[block.type]++,
             ...makeSnippet(block.text, idx, q.length),
           });
         }
@@ -63,6 +68,7 @@ async function runSearch(query: string): Promise<SearchResult[]> {
               notebookTitle: nb.title,
               blockId: block.id,
               blockType: 'link',
+              occurrenceIndex: 0,
               ...makeSnippet(fieldText, idx, q.length),
             });
             break;

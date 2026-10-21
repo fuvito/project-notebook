@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useEditor, EditorContent, type JSONContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
 import type { Editor } from '@tiptap/core';
+import Link from '@tiptap/extension-link';
+import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { openUrl } from '../browser/tabs.ts';
 import { getNotebook, saveNotebook } from '../db/repository.ts';
 import { blocksToTipTap, tipTapToBlocks } from '../db/serializer.ts';
 import { LinkCardExtension } from '../extensions/LinkCard.tsx';
 import { CaptureBar } from './CaptureBar.tsx';
-import { openUrl } from '../browser/tabs.ts';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -269,20 +269,68 @@ function OutlinePanel({ headings, editorDom }: OutlinePanelProps) {
 
 // ── pure helpers ─────────────────────────────────────────────────────────────
 
-function findMatchPos(editor: Editor, query: string): { from: number; to: number } | null {
+export interface NotebookScrollTarget {
+  query: string;
+  blockType: 'title' | 'heading' | 'paragraph' | 'bullet' | 'link';
+  occurrenceIndex: number;
+  blockId: string;
+  version: number;
+}
+
+function findMatchPos(
+  editor: Editor,
+  target: Omit<NotebookScrollTarget, 'version'>,
+): { from: number; to: number } | null {
+  const { query, blockType, occurrenceIndex, blockId } = target;
+  if (blockType === 'title') return null;
+
   const q = query.toLowerCase();
+  const doc = editor.state.doc;
+  let matchCount = 0;
   let result: { from: number; to: number } | null = null;
-  editor.state.doc.descendants((node, pos) => {
-    if (result !== null) return false;
-    if (node.isText && node.text) {
-      const idx = node.text.toLowerCase().indexOf(q);
-      if (idx !== -1) {
-        result = { from: pos + idx, to: pos + idx + q.length };
+
+  if (blockType === 'link') {
+    doc.descendants((node, pos) => {
+      if (result) return false;
+      if (node.type.name === 'linkCard' && node.attrs.id === blockId) {
+        result = { from: pos, to: pos + node.nodeSize };
         return false;
       }
+      return true;
+    });
+    return result;
+  }
+
+  const blockNodeType =
+    blockType === 'bullet' ? 'listItem'
+    : blockType === 'heading' ? 'heading'
+    : 'paragraph';
+
+  doc.descendants((node, pos, parent) => {
+    if (result) return false;
+    if (node.type.name !== blockNodeType) return true;
+    // For paragraphs, only count direct children of the document (not those inside listItems)
+    if (blockType === 'paragraph' && parent?.type.name !== 'doc') return false;
+
+    if (node.textContent.toLowerCase().includes(q)) {
+      if (matchCount === occurrenceIndex) {
+        node.descendants((child, relPos) => {
+          if (result) return false;
+          if (child.isText && child.text) {
+            const idx = child.text.toLowerCase().indexOf(q);
+            if (idx !== -1) {
+              result = { from: pos + 1 + relPos + idx, to: pos + 1 + relPos + idx + q.length };
+              return false;
+            }
+          }
+          return true;
+        });
+      }
+      matchCount++;
     }
-    return true;
+    return false;
   });
+
   return result;
 }
 
@@ -302,7 +350,7 @@ export interface NotebookEditorProps {
   notebookId: string;
   fullscreen?: boolean;
   onToggleWindow?(): void;
-  scrollTarget?: { text: string; version: number };
+  scrollTarget?: NotebookScrollTarget;
   onScrolled?(): void;
 }
 
@@ -419,7 +467,7 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
   // Select and scroll to search match after content loads
   useEffect(() => {
     if (!contentReady || !scrollTarget || !editor) return;
-    const match = findMatchPos(editor, scrollTarget.text);
+    const match = findMatchPos(editor, scrollTarget);
     if (match) {
       editor.chain().focus().setTextSelection(match).scrollIntoView().run();
     }

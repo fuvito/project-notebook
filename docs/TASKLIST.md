@@ -24,7 +24,7 @@ Use `[ ]` for incomplete tasks and `[x]` for completed tasks.
 -   [x] Build notebook list and create/rename/delete flows.
 -   [x] Add empty states and destructive-action confirmation.
 -   [x] Store last-used notebook preference.
--   [ ] Test persistence after reload and browser restart.
+-   [x] Test persistence after reload and browser restart.
 
 ## Phase 3 --- Editor
 
@@ -45,7 +45,7 @@ Use `[ ]` for incomplete tasks and `[x]` for completed tasks.
 -   [x] Allow editing title/URL and adding a description.
 -   [x] Insert link block at a predictable location.
 -   [x] Show success/error feedback; handle unsupported tabs.
--   [ ] Manually test in Chrome.
+-   [x] Manually test in Chrome.
 
 ## Phase 5 --- Search
 

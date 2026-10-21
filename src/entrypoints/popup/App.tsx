@@ -1,13 +1,13 @@
-import { useState, useCallback } from 'react';
-import { NotebookList } from '../../components/NotebookList.tsx';
-import { NotebookEditor } from '../../components/NotebookEditor.tsx';
-import { SearchPanel } from '../../components/SearchPanel.tsx';
-import { useNotebooks } from '../../hooks/useNotebooks.ts';
+import { useCallback, useState } from 'react';
 import {
+  closeCurrentWindow,
   isFullscreenMode,
   openFullscreenWindow,
-  closeCurrentWindow,
 } from '../../browser/windows.ts';
+import { NotebookEditor, type NotebookScrollTarget } from '../../components/NotebookEditor.tsx';
+import { NotebookList } from '../../components/NotebookList.tsx';
+import { SearchPanel } from '../../components/SearchPanel.tsx';
+import { useNotebooks } from '../../hooks/useNotebooks.ts';
 
 const fullscreen = isFullscreenMode();
 
@@ -52,7 +52,7 @@ export default function App() {
   const { notebooks, selectedId, loading, select, create, rename, remove } = useNotebooks();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchActive, setSearchActive] = useState(false);
-  const [pendingScroll, setPendingScroll] = useState<{ text: string; version: number } | undefined>();
+  const [pendingScroll, setPendingScroll] = useState<NotebookScrollTarget | undefined>();
 
   const handleWindowToggle = () => {
     if (fullscreen) {
@@ -63,10 +63,10 @@ export default function App() {
   };
 
   const handleSelectResult = useCallback(
-    (notebookId: string, scrollToText?: string) => {
+    (notebookId: string, scrollTo?: { query: string; blockType: NotebookScrollTarget['blockType']; occurrenceIndex: number; blockId: string }) => {
       select(notebookId);
-      if (scrollToText) {
-        setPendingScroll((prev) => ({ text: scrollToText, version: (prev?.version ?? 0) + 1 }));
+      if (scrollTo) {
+        setPendingScroll((prev) => ({ ...scrollTo, version: (prev?.version ?? 0) + 1 }));
       }
     },
     [select],

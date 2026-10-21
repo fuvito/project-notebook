@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { useSearch, type SearchResult } from '../hooks/useSearch.ts';
+import { useEffect, useRef, useState } from 'react';
+import { type SearchResult, useSearch } from '../hooks/useSearch.ts';
 
 const INDIGO = '#4F46E5';
 const SURFACE = '#F9FAFB';
@@ -138,9 +138,16 @@ function Highlight({ snippet, matchStart, matchLength }: HighlightProps) {
   );
 }
 
+interface ScrollInfo {
+  query: string;
+  blockType: SearchResult['blockType'];
+  occurrenceIndex: number;
+  blockId: string;
+}
+
 interface SearchPanelProps {
   onClose(): void;
-  onSelectResult(notebookId: string, scrollToText?: string): void;
+  onSelectResult(notebookId: string, scrollTo?: ScrollInfo): void;
 }
 
 export function SearchPanel({ onClose, onSelectResult }: SearchPanelProps) {
@@ -165,7 +172,12 @@ export function SearchPanel({ onClose, onSelectResult }: SearchPanelProps) {
   const handleSelect = (r: SearchResult) => {
     const key = `${r.notebookId}/${r.blockId}`;
     setActiveKey(key);
-    const scrollTo = r.blockType === 'title' ? undefined : query.trim();
+    const scrollTo: ScrollInfo | undefined = r.blockType === 'title' ? undefined : {
+      query: query.trim(),
+      blockType: r.blockType,
+      occurrenceIndex: r.occurrenceIndex,
+      blockId: r.blockId,
+    };
     onSelectResult(r.notebookId, scrollTo);
   };
 
