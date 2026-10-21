@@ -82,18 +82,19 @@ const styles = {
     borderTop: `1px solid ${BORDER}`,
     marginTop: '0.125rem',
   },
-  resultBtn: {
+  resultBtn: (active: boolean) => ({
     display: 'flex',
     flexDirection: 'column' as const,
     width: '100%',
     textAlign: 'left' as const,
-    background: 'none',
+    background: active ? '#EEF2FF' : 'none',
     border: 'none',
-    padding: '0.25rem 0.625rem',
+    borderLeft: active ? `2px solid ${INDIGO}` : '2px solid transparent',
+    padding: '0.25rem 0.5rem 0.25rem 0.375rem',
     cursor: 'pointer',
     fontFamily: 'inherit',
     gap: '1px',
-  },
+  }),
   resultTypeRow: {
     display: 'flex',
     alignItems: 'center',
@@ -146,6 +147,7 @@ export function SearchPanel({ onClose, onSelectResult }: SearchPanelProps) {
   const [query, setQuery] = useState('');
   const { results, searching } = useSearch(query);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -161,6 +163,8 @@ export function SearchPanel({ onClose, onSelectResult }: SearchPanelProps) {
   }
 
   const handleSelect = (r: SearchResult) => {
+    const key = `${r.notebookId}/${r.blockId}`;
+    setActiveKey(key);
     const scrollTo = r.blockType === 'title' ? undefined : query.trim();
     onSelectResult(r.notebookId, scrollTo);
   };
@@ -181,7 +185,7 @@ export function SearchPanel({ onClose, onSelectResult }: SearchPanelProps) {
           ref={inputRef}
           style={styles.input}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); setActiveKey(null); }}
           onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
           placeholder="Search…"
           aria-label="Search notebooks"
@@ -210,7 +214,7 @@ export function SearchPanel({ onClose, onSelectResult }: SearchPanelProps) {
                   <li key={`${r.notebookId}/${r.blockId}`}>
                     <button
                       type="button"
-                      style={styles.resultBtn}
+                      style={styles.resultBtn(activeKey === `${r.notebookId}/${r.blockId}`)}
                       onClick={() => handleSelect(r)}
                       title={r.snippet}
                     >

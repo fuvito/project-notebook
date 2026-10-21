@@ -269,6 +269,23 @@ function OutlinePanel({ headings, editorDom }: OutlinePanelProps) {
 
 // ── pure helpers ─────────────────────────────────────────────────────────────
 
+function findMatchPos(editor: Editor, query: string): { from: number; to: number } | null {
+  const q = query.toLowerCase();
+  let result: { from: number; to: number } | null = null;
+  editor.state.doc.descendants((node, pos) => {
+    if (result !== null) return false;
+    if (node.isText && node.text) {
+      const idx = node.text.toLowerCase().indexOf(q);
+      if (idx !== -1) {
+        result = { from: pos + idx, to: pos + idx + q.length };
+        return false;
+      }
+    }
+    return true;
+  });
+  return result;
+}
+
 function extractHeadings(doc: JSONContent): HeadingEntry[] {
   return (doc.content ?? [])
     .filter((n) => n.type === 'heading')
@@ -285,7 +302,7 @@ export interface NotebookEditorProps {
   notebookId: string;
   fullscreen?: boolean;
   onToggleWindow?(): void;
-  scrollToText?: string;
+  scrollTarget?: { text: string; version: number };
   onScrolled?(): void;
 }
 
@@ -299,7 +316,7 @@ function loadScrollPos(notebookId: string): number {
   try { return Number(localStorage.getItem(SCROLL_KEY(notebookId)) ?? '0'); } catch { return 0; }
 }
 
-export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollToText, onScrolled }: NotebookEditorProps) {
+export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollTarget, onScrolled }: NotebookEditorProps) {
   const [contentReady, setContentReady] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -399,21 +416,15 @@ export function NotebookEditor({ notebookId, fullscreen, onToggleWindow, scrollT
     if (saved > 0) scrollRef.current.scrollTop = saved;
   }, [contentReady, notebookId]);
 
-  // Scroll to search match after content loads
+  // Select and scroll to search match after content loads
   useEffect(() => {
-    if (!contentReady || !scrollToText || !editorDom) return;
-    const q = scrollToText.toLowerCase();
-    const walker = document.createTreeWalker(editorDom, NodeFilter.SHOW_TEXT);
-    let node = walker.nextNode();
-    while (node) {
-      if (node.textContent?.toLowerCase().includes(q)) {
-        (node.parentElement ?? editorDom).scrollIntoView({ behavior: 'smooth', block: 'center' });
-        break;
-      }
-      node = walker.nextNode();
+    if (!contentReady || !scrollTarget || !editor) return;
+    const match = findMatchPos(editor, scrollTarget.text);
+    if (match) {
+      editor.chain().focus().setTextSelection(match).scrollIntoView().run();
     }
     onScrolled?.();
-  }, [contentReady, scrollToText, editorDom, onScrolled]);
+  }, [contentReady, scrollTarget, editor, onScrolled]);
 
   // Flush pending save on unmount
   useEffect(() => {

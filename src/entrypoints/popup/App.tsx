@@ -52,7 +52,7 @@ export default function App() {
   const { notebooks, selectedId, loading, select, create, rename, remove } = useNotebooks();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchActive, setSearchActive] = useState(false);
-  const [pendingScroll, setPendingScroll] = useState<string | undefined>();
+  const [pendingScroll, setPendingScroll] = useState<{ text: string; version: number } | undefined>();
 
   const handleWindowToggle = () => {
     if (fullscreen) {
@@ -65,8 +65,9 @@ export default function App() {
   const handleSelectResult = useCallback(
     (notebookId: string, scrollToText?: string) => {
       select(notebookId);
-      setPendingScroll(scrollToText);
-      setSearchActive(false);
+      if (scrollToText) {
+        setPendingScroll((prev) => ({ text: scrollToText, version: (prev?.version ?? 0) + 1 }));
+      }
     },
     [select],
   );
@@ -101,7 +102,7 @@ export default function App() {
           notebookId={selectedId}
           fullscreen={fullscreen}
           onToggleWindow={handleWindowToggle}
-          scrollToText={pendingScroll}
+          scrollTarget={pendingScroll}
           onScrolled={handleScrolled}
         />
       ) : (
