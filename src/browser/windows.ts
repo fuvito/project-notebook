@@ -19,6 +19,9 @@ export async function openFullscreenWindow(): Promise<void> {
     top,
     focused: true,
   });
+
+  // Close the popup so only one window is open at a time.
+  window.close();
 }
 
 export function closeCurrentWindow(): void {

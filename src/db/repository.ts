@@ -68,18 +68,9 @@ export async function getNotebook(id: string): Promise<Notebook | undefined> {
   return db.get('notebooks', id);
 }
 
-let syncChannel: BroadcastChannel | null = null;
-function getBroadcastChannel(): BroadcastChannel | null {
-  if (!syncChannel) {
-    try { syncChannel = new BroadcastChannel('pn_sync'); } catch { /* not available in tests */ }
-  }
-  return syncChannel;
-}
-
 export async function saveNotebook(notebook: Notebook): Promise<void> {
   const db = await getDB();
   await db.put('notebooks', notebook);
-  getBroadcastChannel()?.postMessage({ type: 'saved', notebookId: notebook.id });
 }
 
 export async function deleteNotebook(id: string): Promise<void> {
