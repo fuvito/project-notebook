@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NotebookList } from './NotebookList.tsx';
+import { NotebookList, type NotebookListProps } from './NotebookList.tsx';
 import type { Notebook } from '../types/schema.ts';
 
 function nb(id: string, title: string): Notebook {
   return { id, title, createdAt: 1000, updatedAt: 1000, content: { version: 1, blocks: [] } };
 }
 
-const baseProps = {
+const baseProps: NotebookListProps = {
   notebooks: [nb('nb-a', 'Alpha'), nb('nb-b', 'Beta')],
   selectedId: 'nb-a',
   loading: false,
@@ -18,7 +18,7 @@ const baseProps = {
   onDelete: vi.fn().mockResolvedValue(undefined),
 };
 
-function setup(overrides: Partial<typeof baseProps> = {}) {
+function setup(overrides: Partial<NotebookListProps> = {}) {
   const props = { ...baseProps, ...overrides };
   const user = userEvent.setup();
   render(<NotebookList {...props} />);
