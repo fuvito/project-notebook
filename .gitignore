@@ -60,3 +60,5 @@ vite.config.ts.timestamp-*
 .DS_Store
 Thumbs.db
 desktop.ini
+playwright-report/
+test-results/

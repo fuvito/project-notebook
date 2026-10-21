@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:ui": "npm run build && playwright test --ui",
     "lint": "biome lint src",
     "icons": "node scripts/generate-icons.mjs"
   },
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "^1.64.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
