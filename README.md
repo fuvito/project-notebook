@@ -87,6 +87,17 @@ npm run icons        # generate icon PNGs in public/
 npm run dev          # start WXT dev mode — opens Chrome with the extension loaded
 ```
 
+For quick UI work without installing the extension, use the Vite dev server:
+
+```bash
+npm run serve
+# opens http://localhost:5173 in your default browser
+```
+
+> Chrome APIs (`chrome.storage`, `chrome.tabs`) are not available in this mode. As Chrome API calls are added in later phases, mock adapters will be introduced so the serve mode stays usable.
+
+For full extension testing (Chrome APIs included), use WXT dev mode:
+
 `npm run dev` uses WXT's development server, which:
 - Builds the extension and opens Chrome automatically with it installed
 - Watches for file changes and hot-reloads the extension
@@ -120,6 +131,7 @@ npm run typecheck && npm run lint && npm test
 
 | Command | Description |
 |---|---|
+| `npm run serve` | Vite dev server at `http://localhost:5173` — test the popup UI in a browser tab without installing the extension |
 | `npm run dev` | WXT dev mode — builds, opens Chrome with the extension, and hot-reloads on changes |
 | `npm run build` | Production build to `.output/chrome-mv3/` |
 | `npm run zip` | Production build + zip archive ready for Chrome Web Store upload |
