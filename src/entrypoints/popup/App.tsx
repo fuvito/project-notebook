@@ -107,15 +107,17 @@ export default function App() {
       ) : (
         <div style={styles.placeholder}>
           {loading ? 'Loading…' : 'Select a notebook or create one to get started.'}
-          <button
-            type="button"
-            style={styles.windowBtn}
-            onClick={handleWindowToggle}
-            title={fullscreen ? 'Restore to popup' : 'Open full screen'}
-            aria-label={fullscreen ? 'Restore to popup' : 'Open full screen'}
-          >
-            {fullscreen ? '⤡ Restore' : '⤢ Full screen'}
-          </button>
+          {!fullscreen && (
+            <button
+              type="button"
+              style={styles.windowBtn}
+              onClick={handleWindowToggle}
+              title="Open full screen"
+              aria-label="Open full screen"
+            >
+              ⤢ Full screen
+            </button>
+          )}
         </div>
       )}
     </div>

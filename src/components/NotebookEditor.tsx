@@ -210,17 +210,17 @@ function Toolbar({ editor, showOutline, headingsCount, capturing, fullscreen, on
         >
           {capturing ? '✕' : '🔗'}
         </button>
-        {onToggleWindow && (
+        {onToggleWindow && !fullscreen && (
           <>
             <div style={styles.toolbarDivider} />
             <button
               type="button"
               style={styles.toolbarBtn(false)}
               onClick={onToggleWindow}
-              title={fullscreen ? 'Restore popup' : 'Open full screen'}
-              aria-label={fullscreen ? 'Restore popup' : 'Open full screen'}
+              title="Open full screen"
+              aria-label="Open full screen"
             >
-              {fullscreen ? '⤡' : '⤢'}
+              ⤢
             </button>
           </>
         )}
